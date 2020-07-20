@@ -40,7 +40,8 @@ active_parameters = {
     'n_iter': 5,
     'init_size': 20,
     'compute_score': True,
-    'score_on_train': False
+    'score_on_train': False,
+    'output_dir': OUTPUT_DIR
 }
 
 train_parameters = {
@@ -68,7 +69,8 @@ def set_up():
     logger.info('Setting up datasets...')
     model, cfg = get_model_config(config_file)
 
-    dataset = pascal_voc.PascalVOCObjectDataset(index_train, n_init=active_parameters['init_size'], cfg=cfg)
+    dataset = pascal_voc.PascalVOCObjectDataset(
+        index_train, n_init=active_parameters['init_size'], output_dir=active_parameters['output_dir'], cfg=cfg)
     # test_dataset = active_dataset.MaskDataset(dataset._get_initial_dataset(train=False), np.arange(40))
     test_dataset = dataset._get_initial_dataset(train=False)
     dataset.set_validation_dataset(test_dataset)
@@ -87,9 +89,23 @@ logger.info('Launching trainings...')
 
 dataset, learner = set_up()
 
+
+# train_ds = dataset.get_labeled()
+
+# print(train_ds.dataset.dataset.get_annotation(0))
+# class_to_instance_size = {}
+# for i in range(len(train_ds.dataset)):
+#     _, (_, labels, _) = train_ds.dataset.dataset.get_annotation(i)
+#     print(labels)
+#     for label in labels:
+
+    
+    # print(train_ds.dataset.get_annotation(i))
+
 strategy = 'al_for_deep_object_detection'
 # strategy='random_sampling'
-trainer = ActiveTrain(learner, dataset, strategy, logger_name, strategy_params={'agregation': 'sum'})
+trainer = ActiveTrain(learner, dataset, strategy, logger_name,
+    strategy_params={'agregation': 'sum', 'weighted': True})
 scores = trainer.train(train_parameters, **active_parameters)
 
 # score_data = {}

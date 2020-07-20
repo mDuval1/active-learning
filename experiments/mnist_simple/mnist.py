@@ -57,7 +57,8 @@ active_parameters = {
     'n_iter': 5,
     'init_size': 100,
     'compute_score': True,
-    'score_on_train': True
+    'score_on_train': True,
+    'output_dir': OUTPUT_DIR
 }
 
 train_parameters = {
@@ -74,7 +75,7 @@ index_train = np.arange(VAL_SIZE, TRAIN_SIZE+VAL_SIZE)
 def set_up():
     logger.info('Setting up datasets...')
 
-    dataset = mnist.MnistDataset(index_train, n_init=active_parameters['init_size'])
+    dataset = mnist.MnistDataset(index_train, n_init=active_parameters['init_size'], output_dir=active_parameters['output_dir'])
     dataset.set_validation_dataset(dataset.get_dataset(index_validation))
 
     logger.info('Setting up models...')

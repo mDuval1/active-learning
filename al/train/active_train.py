@@ -1,3 +1,4 @@
+import os
 import logging
 
 from ..algorithms import get_strategy
@@ -9,8 +10,11 @@ class ActiveTrain():
     def __init__(self, learner, dataset, method, logger_name=None, strategy_params={}):
         self.learner = learner
         self.dataset = dataset
-        self.strategy = get_strategy(method, **strategy_params)
+        self.method = method
+        self.strategy = get_strategy(method, logger_name=logger_name, labeled_ds=dataset.get_labeled(), **strategy_params)
+        self.logger_name = logger_name
         self.logger = logging.getLogger(logger_name)
+        self.strategy_params = strategy_params
 
     @timeit
     def train_iter(self, *args, **kwargs):
@@ -37,6 +41,7 @@ class ActiveTrain():
     def add_to_labeled(self, n, log_time={}):
         self.logger.debug(f'Adding {n} samples to the dataset...')
         unlabeled_dataset = self.dataset.get_unlabeled()
+        self.strategy = get_strategy(self.method, logger_name=self.logger_name, labeled_ds=self.dataset.get_labeled(), **self.strategy_params)
         unlabeled_indices_to_add = self.strategy.return_top_indices(unlabeled_dataset, self.learner, n, log_time=log_time)
         indices_to_add = [self.dataset.unlabeled_to_all[i] for i in unlabeled_indices_to_add]
         self.dataset.add_to_labeled(indices_to_add)
@@ -44,7 +49,7 @@ class ActiveTrain():
         self.logger.debug(f'Labeled dataset size : {len(self.dataset.get_labeled())}')
         self.logger.debug(f'Unlabeled dataset size : {len(self.dataset.get_unlabeled())}')
 
-    def train(self, train_parameters, n_iter, assets_per_query, compute_score, score_on_train, *args, **kwargs):
+    def train(self, train_parameters, n_iter, assets_per_query, compute_score, score_on_train, output_dir, *args, **kwargs):
         list_scores = []
         self.logger.info(f'Training for {n_iter} steps, querying {assets_per_query} assets per step.')
         for i in range(n_iter):

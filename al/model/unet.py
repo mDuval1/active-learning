@@ -13,12 +13,12 @@ from ..helpers.time import timeit
 from ..helpers.samplers import IterationBasedBatchSampler
 
 
-
-class SSDLearner(ActiveLearner):
+class UNetLearner(ActiveLearner):
 
     def __init__(self, model, cfg, logger_name=None):
         self.cfg = cfg
         self.model = model
+        self.criterion = nn.CrossEntropyLoss()
         self.logger = logging.getLogger(logger_name)
 
     def get_predictions(self, dataset):
@@ -60,13 +60,13 @@ class SSDLearner(ActiveLearner):
             sampler=self.get_base_sampler(len(dataset), shuffle), batch_size=batch_size, drop_last=False)
         batch_sampler = IterationBasedBatchSampler(batch_sampler, num_iterations=iterations, start_iter=0)
         loader = torch.utils.data.DataLoader(
-            dataset, batch_sampler=batch_sampler,
+            dataset, batch_sampler=batch_sampler, num_workers=self.cfg.DATA_LOADER.NUM_WORKERS,
             pin_memory=self.cfg.DATA_LOADER.PIN_MEMORY, collate_fn=BatchCollator(is_train=True))
-        for step, (images, targets, _) in tqdm.tqdm(
+        for step, (images, label_image) in tqdm.tqdm(
                 enumerate(loader), disable=self.logger.level > 15, total=len(loader)):
             self.model.zero_grad()
-            loss_dict = self.model(images, targets=targets)
-            loss = sum(loss for loss in loss_dict.values())
+            mask_preds = self.model(images)
+            loss = self.criterion(mask_preds, label_image)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()

@@ -7,7 +7,7 @@ import numpy as np
 import al
 from al.dataset import pascal_voc
 from al.dataset import active_dataset
-from al.model.model_zoo.ssd import SSDDetector
+from al.model.model_zoo.unet import UNet
 from al.model.model_zoo.image_classification import mobilenet
 from al.model.ssd import SSDLearner
 from al.model.configs import cfg
@@ -54,12 +54,12 @@ train_parameters = {
 
 index_train = np.arange(TRAIN_SIZE)
 
-config_file = 'al/model/configs/mobilenet_v2_ssd320_voc0712.yaml'
+config_file = 'al/model/configs/unet.yaml'
 
 def get_model_config(config_file):
     cfg.merge_from_file(config_file)
-    if 'mobilenet' in config_file:
-        model = SSDDetector(cfg)
+    if 'unet' in config_file:
+        model = UNet(cfg)
     cfg.freeze()
     return model, cfg
 
@@ -78,6 +78,11 @@ def set_up():
     logger.info(f'Dataset test size : {len(test_dataset)}')
 
     logger.info('Setting up models...')
+
+    img, label = dataset.dataset[0]
+
+    print(img.shape, label.shape)
+    print(np.unique(label))
 
     
     learner = SSDLearner(model=model, cfg=cfg, logger_name=logger_name)

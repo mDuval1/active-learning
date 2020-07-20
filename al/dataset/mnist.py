@@ -7,9 +7,9 @@ from ..helpers.constants import DATA_ROOT
 
 class MnistDataset(ActiveDataset):
 
-    def __init__(self, indices, n_init=100):
+    def __init__(self, indices, n_init=100, output_dir=None):
         self.init_dataset = self._get_initial_dataset()
-        super().__init__(self.get_dataset(indices))
+        super().__init__(self.get_dataset(indices), n_init=n_init, output_dir=output_dir)
 
     def _get_initial_dataset(self):
         return torchvision.datasets.MNIST(

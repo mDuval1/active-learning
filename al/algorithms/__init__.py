@@ -1,5 +1,6 @@
 from .random import *
 from .uncertainty import *
+from .coreset import *
 from .al_for_deep_object_detection import DeepObjectDetectionStrategy
 
 
@@ -12,5 +13,7 @@ def get_strategy(strategy_name, **kwargs):
         return MarginStrategy()
     elif strategy_name == 'entropy_sampling':
         return EntropyStrategy()
+    elif strategy_name == 'coreset':
+        return CoreSetStrategy()
     elif strategy_name == 'al_for_deep_object_detection':
         return DeepObjectDetectionStrategy(**kwargs)

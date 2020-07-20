@@ -1,5 +1,8 @@
 # C. Brust, C. Käding and J. Denzler (2019) Active learning for deep object detection.
 # In VISAPP. https://arxiv.org/pdf/1809.09875.pdf
+import logging
+from collections import defaultdict
+
 import torch
 import numpy as np
 import tqdm
@@ -10,11 +13,24 @@ from ..helpers.time import timeit
 
 class DeepObjectDetectionStrategy(Strategy):
 
-    def __init__(self, agregation='sum', weighted=False):
+    def __init__(self, logger_name=None, agregation='sum', weighted=False, labeled_ds=None):
         self.agregation = agregation
         self.weighted = weighted
         self.permut = True
         self.batch_size = 2
+        self.logger = logging.getLogger(logger_name)
+        if labeled_ds:
+            voc_dataset = labeled_ds.dataset.dataset
+            self.n_classes = len(voc_dataset.class_names)
+            self.logger.debug(f'Dataset has size {len(labeled_ds)}, with {self.n_classes} classes')
+            class_to_instance_size = defaultdict(int)
+            for i in range(len(labeled_ds)):
+                _, (_, labels, _) = voc_dataset.get_annotation(i)
+                for label in labels:
+                    class_to_instance_size[label] += 1
+            self.logger.debug(f'Class to instance size : {class_to_instance_size}')
+            self.logger.debug(f'Total instance count : {sum(list(class_to_instance_size.values()))}')
+            self.class_to_instance_size = class_to_instance_size
 
     @timeit
     def score_dataset(self, dataset, learner, log_time={}):
@@ -22,7 +38,12 @@ class DeepObjectDetectionStrategy(Strategy):
         detections, unlabeled_ids = inference_result['detections'], inference_result['image_ids']
         self.id2uncertaintyId = {i: k for k, i in enumerate(unlabeled_ids)}
         self.uncertaintyId2id = {v: k for k, v in self.id2uncertaintyId.items()}
-        return compute_uncertainties(detections, self.agregation, self.weighted)
+        weights_parameters = {}
+        if self.weighted:
+            weights_parameters['n_classes'] = self.n_classes
+            weights_parameters['class_to_instance_size'] = self.class_to_instance_size
+        self.logger.debug(f'Logits 0 : {detections["logits"][0]} made on {len(dataset)} samples')
+        return compute_uncertainties(detections, self.agregation, self.weighted, weights_parameters)
 
     @timeit
     def return_top_indices(self, dataset, learner, top, log_time={}):
@@ -30,29 +51,26 @@ class DeepObjectDetectionStrategy(Strategy):
         query_uncertainty_idx = select_top_indices(
             uncertainties, permut=self.permut, batch_size=self.batch_size, n_instances=top)
         query_uncertainty_idx = list(map(int, query_uncertainty_idx))
-        # print()
-        # print(f'Maximum id of the query : {max(query_uncertainty_idx)}')
-        # print(f'Number of selected indices : {len(query_uncertainty_idx)}')
-        # print(f'Number of uncertainties computed : {len(uncertainties)}')
-        # print()
         assert max(query_uncertainty_idx) < len(uncertainties)
         return query_uncertainty_idx
-        # keys = set(list(self.uncertaintyId2id.keys()))
-        # for id_ in query_uncertainty_idx:
-        #     assert id_ in keys, f"id {id_} not in keys !"
-        # query_idx = [self.uncertaintyId2id[x] for x in query_uncertainty_idx]
-        # return query_idx
 
 
-def compute_uncertainties_asset(detection):
+def compute_uncertainties_asset(detection, weighted=False, weights_parameters={}):
     probas = detection['logits'].softmax(axis=1)
     labels = detection['labels']
     probas = probas.detach().cpu().numpy()
     rev = np.sort(probas, axis=1)[:, ::-1]
-    values = (1 - rev[:, 0] - rev[:, 1])**2
-    return values, labels
+    v1_vs_2 = (1 - rev[:, 0] - rev[:, 1])**2
+    if weighted:
+        predicted_class = int(np.argsort(probas, axis=1)[:, ::-1][0, 0])
+        c2isize = weights_parameters['class_to_instance_size']
+        n_instances = sum(list(c2isize.values()))
+        weight = (n_instances + weights_parameters['n_classes']) / (1 + c2isize[predicted_class])
+    else: 
+        weight = 1
+    return weight * v1_vs_2, labels
 
-def agregate_detection_uncertainties(agregation_method, weighted):
+def agregate_detection_uncertainties(agregation_method):
     def agregation(values, labels):
         if agregation_method == 'mean':
             return values.mean()
@@ -62,9 +80,11 @@ def agregate_detection_uncertainties(agregation_method, weighted):
             return values.max()
     return agregation
 
-def compute_uncertainties(detections, agregation, weighted):
-    agregate_func = agregate_detection_uncertainties(agregation, weighted)
-    uncertainties = np.array(list(map(lambda x: agregate_func(*compute_uncertainties_asset(x)), detections)))
+def compute_uncertainties(detections, agregation, weighted, weights_parameters):
+    agregate_func = agregate_detection_uncertainties(agregation)
+    uncertainties = np.array(list(map(
+        lambda x: agregate_func(
+            *compute_uncertainties_asset(x, weighted, weights_parameters)), detections)))
     return uncertainties
 
 

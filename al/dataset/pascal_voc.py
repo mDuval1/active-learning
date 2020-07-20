@@ -22,11 +22,12 @@ class PascalVOCObjectDataset(ActiveDataset):
                    'motorbike', 'person', 'pottedplant',
                    'sheep', 'sofa', 'train', 'tvmonitor')
 
-    def __init__(self, indices, n_init=100, train=True, year='2012', cfg=None):
+    def __init__(self, indices, n_init=100, output_dir=None, train=True, year='2012', cfg=None):
         self.data_dir = os.path.join(DATA_ROOT, f'VOCdevkit/VOC{year}')
         self.cfg = cfg
         self.init_dataset = self._get_initial_dataset(train, year)
-        super().__init__(self.get_dataset(indices), n_init=n_init)
+        super().__init__(self.get_dataset(indices), n_init=n_init, output_dir=output_dir)
+
 
     def _get_initial_dataset(self, train=True, year='2012'):
         transform, target_transform = get_transforms(self.cfg, train)
@@ -67,7 +68,8 @@ class PascalVOCSemanticDataset(ActiveDataset):
         super().__init__(self.get_dataset(indices), n_init=n_init)
 
     def _get_initial_dataset(self, train=True, year='2012'):
-        transform, target_transform = get_transforms(self.cfg, train)
+        # transform, target_transform = get_transforms(self.cfg, train)
+        transform, target_transform = None, None
         if train:
             image_set = 'train'
         else:
@@ -75,7 +77,7 @@ class PascalVOCSemanticDataset(ActiveDataset):
         if not os.path.exists(self.data_dir):
             torchvision.datasets.VOCSegmentation(root=DATA_ROOT, year=year, image_set=image_set, download=True)
         split = 'train' if train else 'val'
-        return VOCDataset(self.data_dir, split, transform=transform, target_transform=target_transform, keep_difficult=not train)
+        return VOCDatasetSemantic(self.data_dir, split, transform=transform, target_transform=target_transform, keep_difficult=not train)
 
     def get_dataset(self, indices):
         return MaskDataset(self.init_dataset, indices)
@@ -139,13 +141,9 @@ class VOCDataset(torch.utils.data.Dataset):
     @staticmethod
     def _read_image_ids(image_sets_file):
         ids = []
-        # N = 50
-        # i = 0
         with open(image_sets_file) as f:
             for _, line in enumerate(f):
                 ids.append(line.rstrip())
-                # if i < N: ids.append(line.rstrip())
-                # i += 1
         return ids
 
     def _get_annotation(self, image_id):
@@ -194,7 +192,67 @@ class SmallVOCDataset(VOCDataset):
     def __len__(self):
         return 30
 
-class VOCDatasetSemantic(torch.utils.data.Dataset):
+class VOCDatasetSemantic(VOCDataset):
 
-    def __init__(self):
+    def __init__(self, data_dir, split, transform=None, target_transform=None, keep_difficult=False):
+        """Dataset for VOC data.
+        Args:
+            data_dir: the root of the VOC2007 or VOC2012 dataset, the directory contains the following sub-directories:
+                Annotations, ImageSets, JPEGImages, SegmentationClass, SegmentationObject.
+        """
+        self.data_dir = data_dir
+        self.split = split
+        self.transform = transform
+        self.target_transform = target_transform
+        image_sets_file = os.path.join(self.data_dir, "ImageSets", "Segmentation", "%s.txt" % self.split)
+        self.ids = VOCDataset._read_image_ids(image_sets_file)
+        self.keep_difficult = keep_difficult
+
+        self.class_dict = {class_name: i for i, class_name in enumerate(self.class_names)}
+
+    def __getitem__(self, index):
+        image_id = self.ids[index]
+        label_image = self._get_annotation(image_id)
+        image = self._read_image(image_id)
+        if self.transform:
+            image, label_image = self.transform(image, label_image)
+        if self.target_transform:
+            label_image = self.target_transform(label_image)
+        return image, label_image
+
+    def get_annotation(self, index):
+        image_id = self.ids[index]
+        return image_id, self._get_annotation(image_id)
+
+    def __len__(self):
+        return len(self.ids)
+
+    @staticmethod
+    def _read_image_ids(image_sets_file):
+        ids = []
+        with open(image_sets_file) as f:
+            for _, line in enumerate(f):
+                ids.append(line.rstrip())
+        return ids
+
+    def _get_annotation(self, image_id):
+        annotation_file = os.path.join(self.data_dir, "SegmentationClass", "%s.png" % image_id)
+        image = Image.open(annotation_file)
+        image = np.array(image)
+        return image
+
+    def get_img_info(self, index):
+        img_id = self.ids[index]
+        annotation_file = os.path.join(self.data_dir, "Annotations", "%s.xml" % img_id)
+        anno = ET.parse(annotation_file).getroot()
+        size = anno.find("size")
+        im_info = tuple(map(int, (size.find("height").text, size.find("width").text)))
+        return {"height": im_info[0], "width": im_info[1]}
+
+    def _read_image(self, image_id):
+        image_file = os.path.join(self.data_dir, "JPEGImages", "%s.jpg" % image_id)
+        image = Image.open(image_file).convert("RGB")
+        image = np.array(image)
+        return image
+
         

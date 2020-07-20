@@ -37,7 +37,8 @@ active_parameters = {
     'n_iter': 5,
     'init_size': 10000,
     'compute_score': True,
-    'score_on_train': False
+    'score_on_train': False,
+    'output_dir': OUTPUT_DIR
 }
 
 train_parameters = {
@@ -52,7 +53,7 @@ index_train = np.arange(TRAIN_SIZE)
 def set_up():
     logger.info('Setting up datasets...')
 
-    dataset = cifar.Cifar100Dataset(index_train, n_init=active_parameters['init_size'])
+    dataset = cifar.Cifar100Dataset(index_train, n_init=active_parameters['init_size'], output_dir=active_parameters['output_dir'])
     test_dataset = dataset._get_initial_dataset(train=False)
     dataset.set_validation_dataset(test_dataset)
 
