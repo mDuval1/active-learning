@@ -16,15 +16,7 @@ class MnistDataset(ActiveDataset):
             root=DATA_ROOT, train=True, transform=transforms.ToTensor(), download=True)
 
     def get_dataset(self, indices):
-        print(type(self.init_dataset.targets[0]))
-        print(type(self.init_dataset.data[0]))
         return TensorDataset(
             self.init_dataset.data[indices].float() * 2.0 / 255.0 -1.0,
             self.init_dataset.targets[indices]
         )
-
-    def set_validation_dataset(self, dataset):
-        self.val_dataset = dataset
-
-    def get_validation_dataset(self):
-        return self.val_dataset

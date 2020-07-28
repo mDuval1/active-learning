@@ -10,22 +10,17 @@ from al.model.model_zoo.simple_cnn import ConvModel
 from al.model.mnist import MnistLearner
 from al.dataset.mnist import MnistDataset
 from al.train.active_train import ActiveTrain
-from al.helpers.logger import setup_logger
+from al.helpers.experiment import set_up_experiment
 
 
 
 VAL_SIZE = 5000
 TRAIN_SIZE = 10000
 EXPERIMENT_NAME = 'mnist_simple'
-OUTPUT_DIR = f'experiments/{EXPERIMENT_NAME}/results'
-FIGURE_DIR = f'experiments/{EXPERIMENT_NAME}/figures'
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(FIGURE_DIR, exist_ok=True)
+OUTPUT_DIR, FIGURE_DIR, logger, logger_name = set_up_experiment(EXPERIMENT_NAME)
 
-logger_name = EXPERIMENT_NAME
-logger = setup_logger(logger_name, OUTPUT_DIR)
+
 logger.setLevel(logging.INFO)
-
 logger.info('Launching simple experiments on Mnist')
 
 # experiment_parameters = {

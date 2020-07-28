@@ -44,11 +44,6 @@ class PascalVOCObjectDataset(ActiveDataset):
     def get_dataset(self, indices):
         return MaskDataset(self.init_dataset, indices)
 
-    def set_validation_dataset(self, dataset):
-        self.val_dataset = dataset
-
-    def get_validation_dataset(self):
-        return self.val_dataset
 
 
 

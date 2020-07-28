@@ -4,5 +4,5 @@
 
 __version__ = "0.1.1"
 
-from al import algorithms, dataset, helpers, model, train
+from al import algorithms, dataset, helpers, model, train, experiments
 from al.model import model_zoo, configs

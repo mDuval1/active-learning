@@ -18,3 +18,16 @@ class CoreSetStrategy(Strategy):
         scores = self.score_dataset(dataset, log_time=log_time)
         sorted_idx = np.argsort(scores)
         return sorted_idx[-top:]
+
+
+def compute_distance_matrix(features):
+    dist_mat = np.matmul(features, features.transpose())
+    num_samples = features.shape[0]
+    sq = np.array(dist_mat.diagonal()).reshape(num_samples, 1)
+    dist_mat *= -2
+    dist_mat += sq
+    dist_mat += sq.transpose()
+    return dist_mat
+
+
+

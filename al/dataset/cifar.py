@@ -6,8 +6,8 @@ from torch.utils.data import TensorDataset, Dataset
 from .active_dataset import ActiveDataset, MaskDataset
 from ..helpers.constants import DATA_ROOT
 
-CIFAR100_TRAIN_MEAN = (0.5070751592371323, 0.48654887331495095, 0.4409178433670343)
-CIFAR100_TRAIN_STD = (0.2673342858792401, 0.2564384629170883, 0.27615047132568404)
+CIFAR100_TRAIN_MEAN = (0.4914, 0.4822, 0.4465)
+CIFAR100_TRAIN_STD = (0.2023, 0.1994, 0.2010)
 
 
 class TransformedDataset(Dataset):
@@ -41,7 +41,6 @@ class Cifar100Dataset(ActiveDataset):
             transform = transforms.Compose([
                 transforms.RandomCrop(32, padding=4),
                 transforms.RandomHorizontalFlip(),
-                transforms.RandomRotation(15),
                 transforms.ToTensor(),
                 transforms.Normalize(CIFAR100_TRAIN_MEAN, CIFAR100_TRAIN_STD)
             ])
@@ -56,9 +55,3 @@ class Cifar100Dataset(ActiveDataset):
 
     def get_dataset(self, indices):
         return MaskDataset(self.init_dataset, indices)
-
-    def set_validation_dataset(self, dataset):
-        self.val_dataset = dataset
-
-    def get_validation_dataset(self):
-        return self.val_dataset

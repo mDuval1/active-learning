@@ -57,3 +57,9 @@ class ActiveDataset():
         save_to_csv(self.queries_file, indices)
         self.masklabeled[np.array(indices)] = True
         self.update_labeled_list()
+
+    def set_validation_dataset(self, dataset):
+        self.val_dataset = dataset
+
+    def get_validation_dataset(self):
+        return self.val_dataset
