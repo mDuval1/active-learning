@@ -28,14 +28,14 @@ logger.setLevel(logging.DEBUG)
 logger.info('Launching simple experiments on CIFAR100')
 
 experiment_parameters = {
-    'n_repeats': 2,
-    'strategies': ['random_sampling', 'uncertainty_sampling']
+    'n_repeats': 1,
+    'strategies': ['random_sampling', 'margin_sampling']
 }
 
 active_parameters = {
     'assets_per_query': 1000,
-    'n_iter': 5,
-    'init_size': 10000,
+    'n_iter': 15,
+    'init_size': 5000,
     'compute_score': True,
     'score_on_train': False,
     'output_dir': OUTPUT_DIR
@@ -43,7 +43,7 @@ active_parameters = {
 
 train_parameters = {
     'batch_size': 32,
-    'iterations': 100,
+    'iterations': 2000,
     'learning_rate': 0.003,
     'shuffle': True
 }
@@ -75,24 +75,24 @@ strategy='entropy_sampling'
 trainer = ActiveTrain(learner, dataset, strategy, logger_name)
 scores = trainer.train(train_parameters, **active_parameters)
 
-# score_data = {}
+score_data = {}
 
-# for i in range(experiment_parameters['n_repeats']):
-#     logger.info('---------------------------')
-#     logger.info(f'--------ROUND OF TRAININGS NUMBER #{i+1}--------')
-#     logger.info('---------------------------')
-#     for strategy in experiment_parameters['strategies']:
-#         dataset, learner = set_up()
-#         logger.info('---------------------------')
-#         logger.info(f'----STRATEGY : {strategy}----')
-#         logger.info('---------------------------')
-#         trainer = ActiveTrain(learner, dataset, strategy, logger_name)
-#         scores = trainer.train(train_parameters, **active_parameters)
-#         score_data[(strategy, i)] = scores
-#         logger.info(f'----DONE----\n')
-#     logger.info('---------------------------')
-#     logger.info(f'--------DONE--------')
-#     logger.info('---------------------------\n\n\n')
+for i in range(experiment_parameters['n_repeats']):
+    logger.info('---------------------------')
+    logger.info(f'--------ROUND OF TRAININGS NUMBER #{i+1}--------')
+    logger.info('---------------------------')
+    for strategy in experiment_parameters['strategies']:
+        dataset, learner = set_up()
+        logger.info('---------------------------')
+        logger.info(f'----STRATEGY : {strategy}----')
+        logger.info('---------------------------')
+        trainer = ActiveTrain(learner, dataset, strategy, logger_name)
+        scores = trainer.train(train_parameters, **active_parameters)
+        score_data[(strategy, i)] = scores
+        logger.info(f'----DONE----\n')
+    logger.info('---------------------------')
+    logger.info(f'--------DONE--------')
+    logger.info('---------------------------\n\n\n')
 
-# with open(f'{OUTPUT_DIR}/scores.pickle', 'wb') as f:
-#     pickle.dump(score_data, f)
+with open(f'{OUTPUT_DIR}/scores.pickle', 'wb') as f:
+    pickle.dump(score_data, f)

@@ -1084,6 +1084,11 @@ def build_transforms(cfg, is_train=True):
     return transform
 
 
+def build_semantic_transforms(cfg, is_train=True):
+    
+    return transform
+
+
 def build_target_transform(cfg):
     transform = SSDTargetTransform(PriorBox(cfg)(),
                                    cfg.MODEL.CENTER_VARIANCE,
@@ -1110,12 +1115,42 @@ class BatchCollator:
             targets = None
         return images, targets, img_ids
 
+    
+class BatchCollatorSemantic:
+    def __init__(self, is_train=True):
+        self.is_train = is_train
+
+    def __call__(self, batch):
+        transposed_batch = list(zip(*batch))
+        images = default_collate([x[0] for x in transposed_batch[0]])
+
+        if self.is_train:
+            targets = default_collate(transposed_batch[1])
+            # list_targets = transposed_batch[1]
+            # targets = Container(
+            #     {key: default_collate([d[key] for d in list_targets]) for key in list_targets[0]}
+            # )
+        else:
+            targets = None
+        return images, targets
+
 
 def get_transforms(cfg, is_train):
     train_transform = build_transforms(cfg, is_train=is_train)
     target_transform = build_target_transform(cfg) if is_train else None
     return train_transform, target_transform
 
+def get_transforms_semantic(cfg):
+    train_transform = torchvision.transforms.Compose([
+        torchvision.transforms.Resize(cfg.INPUT.IMAGE_SIZE),
+        extended_transforms.FlipChannels(),
+        torchvision.transforms.ToTensor(),
+    ])
+    target_transform = torchvision.transforms.Compose([
+        torchvision.transforms.Resize(cfg.INPUT.IMAGE_SIZE),
+        torchvision.transforms.ToTensor(),
+    ])
+    return train_transform, target_transform
 
 def voc_evaluation(dataset, predictions, output_dir, iteration=None):
     class_names = dataset.class_names

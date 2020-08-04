@@ -20,36 +20,21 @@ EXPERIMENT_NAME = 'mnist_simple'
 OUTPUT_DIR, FIGURE_DIR, logger, logger_name = set_up_experiment(EXPERIMENT_NAME)
 
 
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 logger.info('Launching simple experiments on Mnist')
 
-# experiment_parameters = {
-#     'n_repeats': 2,
-#     'strategies': ['random_sampling', 'uncertainty_sampling']
-# }
-
-# active_parameters = {
-#     'assets_per_query': 50,
-#     'n_iter': 20,
-#     'init_size': 100,
-#     'compute_score': True
-# }
-
-# train_parameters = {
-#     'batch_size': 32,
-#     'iterations': 200,
-#     'learning_rate': 0.003,
-#     'shuffle': True
-# }
-
 experiment_parameters = {
-    'n_repeats': 2,
-    'strategies': ['random_sampling', 'uncertainty_sampling']
+    'save_results': False,
+    # 'n_repeats': 5,
+    'n_repeats': 1,
+    'strategies': ['coreset']
+    # 'strategies': ['random_sampling']
+    # 'strategies': ['coreset', 'random_sampling', 'uncertainty_sampling', 'margin_sampling', 'entropy_sampling']
 }
 
 active_parameters = {
-    'assets_per_query': 100,
-    'n_iter': 5,
+    'assets_per_query': 50,
+    'n_iter': 30,
     'init_size': 100,
     'compute_score': True,
     'score_on_train': True,
@@ -59,7 +44,7 @@ active_parameters = {
 train_parameters = {
     'batch_size': 32,
     'iterations': 100,
-    'learning_rate': 0.003,
+    'learning_rate': 0.001,
     'shuffle': True
 }
 
@@ -76,7 +61,7 @@ def set_up():
     logger.info('Setting up models...')
 
     model = ConvModel()
-    learner = MnistLearner(model)
+    learner = MnistLearner(model, logger_name=logger_name)
     return dataset, learner
 
 
@@ -107,5 +92,6 @@ for i in range(experiment_parameters['n_repeats']):
     logger.info(f'--------DONE--------')
     logger.info('---------------------------\n\n\n')
 
-with open(f'{OUTPUT_DIR}/scores.pickle', 'wb') as f:
-    pickle.dump(score_data, f)
+if experiment_parameters['save_results']:
+    with open(f'{OUTPUT_DIR}/scores.pickle', 'wb') as f:
+        pickle.dump(score_data, f)

@@ -28,4 +28,8 @@ def load_config(folder, dataset):
         config_path = os.path.join(folder, 'pascalvoc_detection.yaml')
         with open(config_path, 'r') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
+    elif dataset == 'pascalvoc_segmentation':
+        config_path = os.path.join(folder, 'pascalvoc_segmentation.yaml')
+        with open(config_path, 'r') as f:
+            config = yaml.load(f, Loader=yaml.FullLoader)
     return config

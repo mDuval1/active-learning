@@ -17,7 +17,7 @@ class DeepObjectDetectionStrategy(Strategy):
         self.agregation = agregation
         self.weighted = weighted
         self.permut = True
-        self.batch_size = 2
+        self.batch_size = 10
         self.logger = logging.getLogger(logger_name)
         if labeled_ds:
             voc_dataset = labeled_ds.dataset.dataset

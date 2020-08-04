@@ -1,4 +1,7 @@
+import logging
+
 import numpy as np
+import tqdm
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -6,12 +9,15 @@ from torch.utils.data.sampler import BatchSampler, SequentialSampler
 
 from .active_model import ActiveLearner
 from ..helpers.time import timeit
+from ..helpers.samplers import IterationBasedBatchSampler
+
 
 class MnistLearner(ActiveLearner):
 
-    def __init__(self, model):
+    def __init__(self, model, logger_name=None):
         self.model = model
         self.criterion = nn.CrossEntropyLoss()
+        self.logger = logging.getLogger(logger_name)
 
     def get_predictions(self, dataset):
         batch_sampler = BatchSampler(
@@ -28,7 +34,7 @@ class MnistLearner(ActiveLearner):
     def inference(self, dataset):
         predictions = self.get_predictions(dataset)
         probabilities = np.exp(predictions) / np.exp(predictions).sum(axis=1)[:, None]
-        return {'class_probabilities': probabilities}
+        return {'class_probabilities': probabilities, 'predictions': predictions}
 
     @staticmethod
     def get_base_sampler(size, shuffle):
@@ -43,8 +49,10 @@ class MnistLearner(ActiveLearner):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
         batch_sampler = BatchSampler(
             sampler=self.get_base_sampler(len(dataset), shuffle), batch_size=batch_size, drop_last=False)
+        batch_sampler = IterationBasedBatchSampler(batch_sampler, num_iterations=iterations, start_iter=0)
         loader = torch.utils.data.DataLoader(dataset, batch_sampler=batch_sampler)
-        for step, (data, targets) in enumerate(loader):
+        for step, (data, targets) in tqdm.tqdm(
+                enumerate(loader), disable=self.logger.level > 15, total=len(loader)):
             self.model.zero_grad()
             prediction = self.model(data)
             loss = self.criterion(prediction, targets)

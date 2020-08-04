@@ -13,6 +13,8 @@ _C.MODEL.NUM_CLASSES = 21
 _C.MODEL.NEG_POS_RATIO = 3
 _C.MODEL.CENTER_VARIANCE = 0.1
 _C.MODEL.SIZE_VARIANCE = 0.2
+_C.MODEL.BILINEAR = True
+
 
 # ---------------------------------------------------------------------------- #
 # Backbone
@@ -51,6 +53,7 @@ _C.INPUT = CN()
 _C.INPUT.IMAGE_SIZE = 300
 # Values to be used for image normalization, RGB layout
 _C.INPUT.PIXEL_MEAN = [123, 117, 104]
+_C.INPUT.CHANNELS = 3
 
 # -----------------------------------------------------------------------------
 # Dataset

@@ -9,7 +9,7 @@ import torch.nn.functional as F
 class UNet(nn.Module):
     def __init__(self, cfg):
         super(UNet, self).__init__()
-        self.n_channels = cfg.IMAGE.CHANNELS
+        self.n_channels = cfg.INPUT.CHANNELS
         self.n_classes = cfg.MODEL.NUM_CLASSES
         self.bilinear = cfg.MODEL.BILINEAR
 
@@ -23,7 +23,7 @@ class UNet(nn.Module):
         self.up2 = Up(512, 256 // factor, self.bilinear)
         self.up3 = Up(256, 128 // factor, self.bilinear)
         self.up4 = Up(128, 64, self.bilinear)
-        self.outc = OutConv(64, self.bilinear)
+        self.outc = OutConv(64, self.n_classes)
 
     def forward(self, x):
         x1 = self.inc(x)

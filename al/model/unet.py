@@ -27,7 +27,7 @@ class UNetLearner(ActiveLearner):
             sampler=self.get_base_sampler(len(dataset), shuffle=False), batch_size=16, drop_last=False)
         loader = torch.utils.data.DataLoader(
             dataset, batch_sampler=batch_sampler,
-            pin_memory=self.cfg.DATA_LOADER.PIN_MEMORY, collate_fn=BatchCollator(is_train=False))
+            pin_memory=self.cfg.DATA_LOADER.PIN_MEMORY)
         detections = []
         loader_ids = []
         with torch.no_grad():
@@ -61,11 +61,14 @@ class UNetLearner(ActiveLearner):
         batch_sampler = IterationBasedBatchSampler(batch_sampler, num_iterations=iterations, start_iter=0)
         loader = torch.utils.data.DataLoader(
             dataset, batch_sampler=batch_sampler, num_workers=self.cfg.DATA_LOADER.NUM_WORKERS,
-            pin_memory=self.cfg.DATA_LOADER.PIN_MEMORY, collate_fn=BatchCollator(is_train=True))
+            pin_memory=self.cfg.DATA_LOADER.PIN_MEMORY, collate_fn=BatchCollatorSemantic(is_train=True))
         for step, (images, label_image) in tqdm.tqdm(
                 enumerate(loader), disable=self.logger.level > 15, total=len(loader)):
             self.model.zero_grad()
+            print(images.shape, label_image.shape)
             mask_preds = self.model(images)
+            print(type(mask_preds), type(label_image))
+            print(mask_preds.shape)
             loss = self.criterion(mask_preds, label_image)
             optimizer.zero_grad()
             loss.backward()
@@ -78,7 +81,7 @@ class UNetLearner(ActiveLearner):
             sampler=self.get_base_sampler(len(dataset), shuffle=False), batch_size=batch_size, drop_last=False)
         loader = torch.utils.data.DataLoader(
             dataset, batch_sampler=batch_sampler,
-            pin_memory=self.cfg.DATA_LOADER.PIN_MEMORY, collate_fn=BatchCollator(is_train=False))
+            pin_memory=self.cfg.DATA_LOADER.PIN_MEMORY)
         with torch.no_grad():
             for (images, targets, image_ids) in tqdm.tqdm(loader, disable=self.logger.level > 15):
                 outputs = self.model(images)

@@ -10,7 +10,7 @@ from torch.utils.data import TensorDataset, Dataset
 
 from .active_dataset import ActiveDataset, MaskDataset
 from ..helpers.constants import DATA_ROOT
-from ..model.model_zoo.ssd import Container, get_transforms
+from ..model.model_zoo.ssd import Container, get_transforms, get_transforms_semantic
 
 
 
@@ -56,15 +56,14 @@ class PascalVOCSemanticDataset(ActiveDataset):
                    'motorbike', 'person', 'pottedplant',
                    'sheep', 'sofa', 'train', 'tvmonitor')
 
-    def __init__(self, indices, n_init=100, train=True, year='2012', cfg=None):
+    def __init__(self, indices, n_init=100, output_dir=None, train=True, year='2012', cfg=None):
         self.data_dir = os.path.join(DATA_ROOT, f'VOCdevkit/VOC{year}')
         self.cfg = cfg
         self.init_dataset = self._get_initial_dataset(train, year)
-        super().__init__(self.get_dataset(indices), n_init=n_init)
+        super().__init__(self.get_dataset(indices), n_init=n_init, output_dir=output_dir)
 
     def _get_initial_dataset(self, train=True, year='2012'):
-        # transform, target_transform = get_transforms(self.cfg, train)
-        transform, target_transform = None, None
+        transform, target_transform = get_transforms_semantic(self.cfg)
         if train:
             image_set = 'train'
         else:
@@ -210,7 +209,8 @@ class VOCDatasetSemantic(VOCDataset):
         label_image = self._get_annotation(image_id)
         image = self._read_image(image_id)
         if self.transform:
-            image, label_image = self.transform(image, label_image)
+            image = self.transform(image)
+        print(image.shape)
         if self.target_transform:
             label_image = self.target_transform(label_image)
         return image, label_image
@@ -233,7 +233,6 @@ class VOCDatasetSemantic(VOCDataset):
     def _get_annotation(self, image_id):
         annotation_file = os.path.join(self.data_dir, "SegmentationClass", "%s.png" % image_id)
         image = Image.open(annotation_file)
-        image = np.array(image)
         return image
 
     def get_img_info(self, index):
@@ -247,7 +246,6 @@ class VOCDatasetSemantic(VOCDataset):
     def _read_image(self, image_id):
         image_file = os.path.join(self.data_dir, "JPEGImages", "%s.jpg" % image_id)
         image = Image.open(image_file).convert("RGB")
-        image = np.array(image)
         return image
 
         

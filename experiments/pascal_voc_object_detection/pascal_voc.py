@@ -16,7 +16,7 @@ from al.helpers.logger import setup_logger
 
 
 
-TRAIN_SIZE = 50
+TRAIN_SIZE = 4000
 
 EXPERIMENT_NAME = 'pascal_voc_object_detection'
 OUTPUT_DIR = f'experiments/{EXPERIMENT_NAME}/results'
@@ -32,21 +32,21 @@ logger.info('Launching simple experiments on Pascal VOC')
 
 experiment_parameters = {
     'n_repeats': 2,
-    'strategies': ['random_sampling', 'uncertainty_sampling']
+    'strategies': ['random_sampling', 'al_for_deep_object_detection']
 }
 
 active_parameters = {
-    'assets_per_query': 4,
-    'n_iter': 5,
-    'init_size': 20,
+    'assets_per_query': 30,
+    'n_iter': 10,
+    'init_size': 1000,
     'compute_score': True,
     'score_on_train': False,
     'output_dir': OUTPUT_DIR
 }
 
 train_parameters = {
-    'batch_size': 4,
-    'iterations': 2,
+    'batch_size': 16,
+    'iterations': 50,
     'learning_rate': 0.001,
     'shuffle': True,
     'momentum': 0.9,
@@ -71,7 +71,6 @@ def set_up():
 
     dataset = pascal_voc.PascalVOCObjectDataset(
         index_train, n_init=active_parameters['init_size'], output_dir=active_parameters['output_dir'], cfg=cfg)
-    # test_dataset = active_dataset.MaskDataset(dataset._get_initial_dataset(train=False), np.arange(40))
     test_dataset = dataset._get_initial_dataset(train=False)
     dataset.set_validation_dataset(test_dataset)
 
@@ -89,18 +88,6 @@ logger.info('Launching trainings...')
 
 dataset, learner = set_up()
 
-
-# train_ds = dataset.get_labeled()
-
-# print(train_ds.dataset.dataset.get_annotation(0))
-# class_to_instance_size = {}
-# for i in range(len(train_ds.dataset)):
-#     _, (_, labels, _) = train_ds.dataset.dataset.get_annotation(i)
-#     print(labels)
-#     for label in labels:
-
-    
-    # print(train_ds.dataset.get_annotation(i))
 
 strategy = 'al_for_deep_object_detection'
 # strategy='random_sampling'

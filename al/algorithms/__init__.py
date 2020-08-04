@@ -14,6 +14,6 @@ def get_strategy(strategy_name, **kwargs):
     elif strategy_name == 'entropy_sampling':
         return EntropyStrategy()
     elif strategy_name == 'coreset':
-        return CoreSetStrategy()
+        return CoreSetStrategy(**kwargs)
     elif strategy_name == 'al_for_deep_object_detection':
         return DeepObjectDetectionStrategy(**kwargs)

@@ -1,3 +1,4 @@
+import os
 import pickle
 
 import numpy as np
@@ -29,12 +30,17 @@ for (strategy, experiment_number), scores_experiment in scores.items():
 
 df = pd.DataFrame(data)
 
+
+plot_dir = os.path.join(os.path.dirname(__file__), 'figures')
+
 plt.figure(num=0, figsize=(12, 5))
 sns.lineplot(x='step', y='accuracy', hue='strategy', data=df)
 plt.ylabel('Accuracy')
 plt.show()
+plt.savefig(os.path.join(plot_dir, 'accuracy.png'))
 
 plt.figure(num=1, figsize=(12, 5))
 sns.lineplot(x='step', y='loss', hue='strategy', data=df)
 plt.ylabel('Loss')
 plt.show()
+plt.savefig(os.path.join(plot_dir, 'loss.png'))

@@ -1,10 +1,12 @@
-
+import torch
 
 
 class ActiveLearner():
 
-    def __init__(self):
-        raise NotImplementedError
+    def __init__(self, device=0):
+        self.cuda_available = torch.cuda.is_available()
+        if self.cuda_available:
+            self.device = torch.cuda.set_device(device)
 
     def fit(self, dataloader):
         raise NotImplementedError

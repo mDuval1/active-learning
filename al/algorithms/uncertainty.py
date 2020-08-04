@@ -35,7 +35,7 @@ class MarginStrategy(BaseUncertaintyStrategy):
         top_preds = probabilities[np.arange(len(probabilities)), sorted_preds[:, -1]]
         second_preds = probabilities[np.arange(len(probabilities)), sorted_preds[:, -2]]
         difference = top_preds - second_preds
-        return -difference
+        return difference
 
 
 class EntropyStrategy(BaseUncertaintyStrategy):
